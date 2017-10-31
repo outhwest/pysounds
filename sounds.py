@@ -29,15 +29,16 @@
 ##                strFinal.append(curValue)
 ##            formerValue = curValue
 ##    if len(strFinal) == 1:
-##        strFinal.append('0','0', '0')
+##        strFinal.append(['0','0', '0'])
 ##    elif len(strFinal) == 2:
-##        strFinal.append('0', '0')
+##        strFinal.append(['0', '0'])
 ##    elif len(strFinal) == 3:
 ##        strFinal.append('0')
 ##
 ##    return str(strFinal[:4])
 
-def Soundex(strInit):
+def Soundex(strInit, codeLength=4):
+    ignored = "'.?!@hw"
     groups = (
         (' '),
         ('b', 'f', 'p', 'v'),
@@ -46,22 +47,34 @@ def Soundex(strInit):
         ('l',),
         ('m', 'n'),
         ('r',),
+        #('a', 'e', 'i', 'o', 'u', 'y')
         )
     strFinal = [strInit[0]]
-    formerVal = 0
-    curVal = 0
+    strInit = strInit.lower()
+    formerVal = 7
+    curVal = 7
+    for idx, group in enumerate(groups):
+        if strInit[0] in group:
+            formerVal = idx
+    
+    inGroups = False
+    strInit = ''.join(c for c in strInit if c not in ignored)
     for letter in strInit[1:]:
         for idx, group in enumerate(groups):
             if letter in group:
                 curVal = idx
+                inGroups = True
         if curVal != formerVal:
-            if curVal != 0:
+            if curVal != 0 and inGroups:
                 strFinal.append(str(curVal))
-            formerVal = curVal
+        if not (inGroups):
+            curVal = 7
+        formerVal = curVal
+        inGroups = False
 
-    # len(strFinal) should be forced to 4
+    # len(strFinal) should be forced to codeLength (traditionally 4)
     strLen = len(strFinal)
-    if strLen < 4:
-        strFinal.append('0', '0', '0')
+    if strLen < codeLength:
+        strFinal.extend(['0']*codeLength)
 
     return ''.join(strFinal[:4]) 
