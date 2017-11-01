@@ -16,9 +16,11 @@ assert isHomophone(a,c)
 assert not isHomophone(a,b)
 assert not isHomophone(b,c)
 assert isHomophone(d,e)
+
 assert Soundex(d) == "A261"
 assert Soundex(f) == "T522"
 assert not isHomophone(g,h)
+
 assert isHomophone(g,h,algorithm=soundFromStart)
 
 assert isHomophone(d,e, algorithm=Metaphone)

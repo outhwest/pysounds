@@ -1,7 +1,27 @@
 from itertools import islice
 
-def Soundex(strInit, codeLength=4, start=False):
+### @package sounds
+##    @brief Module providing the usual phonetic algorithms
+##
+##    The goal here is to find homophones using some of the established
+##    phonetic algorithms like Soundex, Metaphone, Double Metaphone, etc.
+##
+##    Future expansion could involve syllable counting and reading levels
+##    comparable to Flesch-Kincaid from MS Word
+##
     
+
+###    @brief Straightforward implementation of a generalized Soundex algorithm
+##
+##    strInit is used to generate a code of length codeLength where consonantal
+##    sounds are turned into numbered symbols representing like sounds
+##
+##    @param start False allows the usual Soundex property where the first letter
+##    of the code is the first letter of the initial string. Setting to True means
+##    the entire code will be digits in the case of a leading consonant, or else
+##    a leading 'A' for a leading vowel
+def Soundex(strInit, codeLength=4, start=False):
+
     ignored = "'.?!@hw"
     groups = (
         (' '),
@@ -50,10 +70,22 @@ def Soundex(strInit, codeLength=4, start=False):
 
     return ''.join(strFinal[:4])
 
+### @brief Helper function to get character-level n-grams from a source str
+##
+##  For example, getNGrams("Hello",2) should return a generator for:
+##  "He", "el", "ll", "lo"
 def getNGrams(source, n):
     for i in range(len(source)- n + 1):
         yield ''.join(islice(source, i, i + n))
 
+### @brief Attempting to implement original Metaphone algorithm
+##
+##  See a verbal description https://en.wikipedia.org/wiki/Metaphone and
+##  some BASIC code http://aspell.net/metaphone/metaphone.basic
+##
+##  @param initialVowel True differentiates leading vowels, while False
+##  forces all leading vowels to "A"
+##        
 def Metaphone(strInit, initialVowel=True):
     strInit = strInit.upper()
     twoGrams = getNGrams(strInit, 2)
@@ -115,5 +147,11 @@ def Metaphone(strInit, initialVowel=True):
 
     return ''.join(finalList)
 
+### @brief comparison function to put the phonetic algorithms to use
+##
+##  For now, algorithm is meant to be Soundex or Metaphone or a partial
+##  function of either to account for their optional arguments
+##  lambda functions could also be passed in for example lambda x: x
+##  so truth would only be if they match exactly, case and all
 def isHomophone(a,b, algorithm=Soundex):
     return algorithm(a) == algorithm(b)
