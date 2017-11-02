@@ -91,10 +91,12 @@ def Metaphone(strInit, initialVowel=True):
     twoGrams = getNGrams(strInit, 2)
     threeGrams = getNGrams(strInit, 3)
     vowels = "AEIOU"
+    softeners = ['I', 'E', 'Y']
+    
     #previous and current 2Grams
-    twos = [None, next(twoGrams)]
+    twos = [None, None]
     #previous two and current 3Grams
-    threes = [None, None, next(threeGrams)]
+    threes = [None, None, None]
 
     #Deal with the first letter logic
     initialDict = {
@@ -104,28 +106,10 @@ def Metaphone(strInit, initialVowel=True):
         'AE': 'E',
         'WR': 'R'
         }
-    
-    if twos[1] in initialDict:
-        finalList = [initialDict[twos[1]]]
-        twos[0] = twos[1]
-        try:
-            twos[1] = next(twoGrams)
-        except:
-            twos[1] = None
-        threes[1] = threes[2]
-        try:
-            threes[2] = next(threeGrams)
-        except:
-            threes[2] = None
-    else:
-        if initialVowel or (strInit[0] not in vowels):
-            finalList = [strInit[0]]
-        #ie initialVowel=False and first letter is a value
-        else:
-            finalList = ['A']
 
-    #after special casing first letter, rest of word is the same
-    for c in strInit[1:]:
+
+    for c in strInit:
+        
         #increment the previous ngrams lists so that c is in each ngram
         twos[0] = twos[1]
         threes[0] = threes[1]
@@ -138,12 +122,149 @@ def Metaphone(strInit, initialVowel=True):
             threes[2] = next(threeGrams)
         except:
             threes[2] = None
-        
-        # Check for duplicate adjacent letters and skip when at the second
-        if c != 'C' and twos[0] == c*2:
+            
+        #Special case for beginning
+        if threes[0] == None:
+            if twos[0] == None:
+                if twos[1] in initialDict:
+                    finalList = [initialDict[twos[1]]]
+                    continue
+                else:
+                    finalList = []
+                    if c == 'X':
+                        finalList.append('S')
+                        continue
+            if twos[0] in initialDict:
+                continue
+            
+##        print(" Adding", c, 'to:', finalList)
+        # Check for duplicate adjacent letters and skip when on the first
+        if c != 'C' and twos[1] == c*2:
             continue
+
+        # Aside from initial letter rule, vowels are dropped
+        if c in vowels:
+            continue
+        
+        # GH before something other than None (end) or vowel, eg before t, drops
+        # "soft" G becomes J
+        # 'GN' before end drops G
         if c == 'G':
-            pass
+            if twos[0] != 'GG':
+                if twos[1] and twos[1][1] in softeners:
+                    finalList.append('J')
+                    continue
+                if threes[2] == None and twos[1] == 'GN':
+                    continue
+                if twos[1] == 'GH':
+                    if threes[2] == None or threes[2][2] not in vowels:
+                        continue
+            finalList.append('K')
+            continue
+
+        # 'C' in 'CK' drops, 'CIA', 'CH' yield 'X', but 'SCH' C becomes K
+        # "soft" C becomes S
+        if c == 'C':
+            if threes[2] == 'CIA':
+                finalList.append('X')
+                continue
+            if twos[1] == 'CH':
+                if threes[1] == 'SCH':
+                    finalList.append('K')
+                    continue
+                finalList.append('X')
+                continue
+            if twos[1][1] in softeners:
+                finalList.append('S')
+                continue
+            finalList.append('K')
+            continue
+
+        # SH sound goes to X
+        if c == 'S':
+            if twos[1] == 'SH' or threes[2] in ('SIA', 'SIO'):
+                finalList.append('X')
+                continue
+
+        if c == 'X':
+            finalList.append('KS')
+            continue
+
+        # 'D' before soft G becomes 'J', else 'T'
+        if c == 'D':
+            if twos[1] == 'DG' and threes[2][2] in softeners:
+                finalList.append('J')
+                continue
+            finalList.append('T')
+            continue
+
+        if c == 'T':
+            if threes[2] in ('TIA', 'TIO', 'TCH'):
+                if threes[2] == 'TCH':
+                    continue
+                finalList.append('X')
+                continue
+            if twos[1] == 'TH':
+                finalList.append('0')
+                continue
+            
+        
+        if c == 'P':
+            if twos[1] == 'PH':
+                finalList.append('F')
+                continue
+
+        if c == 'K':
+            if twos[0][0] == 'C':
+                continue
+            finalList.append('K')
+            continue
+
+        # semi-vowels only carry through if before a vowel
+        if c in ('W', 'Y'):
+            if twos[1][1] in vowels:
+                finalList.append(c)
+                continue
+            continue
+
+        if c == 'Q':
+            finalList.append('K')
+            continue
+
+        if c == 'V':
+            finalList.append('F')
+            continue
+
+        # Drop B for final 'MB'
+        if threes[2] == None and twos[0] == 'MB':
+            continue
+
+        # Word final GNED drops the 'G', but it would be added above
+        # NIN is a cheating way to check for _GNING_; one solution
+        # would be fours and fives using ngram helper again
+        if c == 'N':
+            if threes[2] in ('NED', 'NIN') and twos[0][0] == 'G':
+                finalList = finalList[:-1]
+            finalList.append('N')
+            continue
+
+        # Drop if after a vowel and not before a vowel
+        # Also drop if after initial W or any P
+        if c == 'H':
+            if twos[0] in ('PH', 'CH', 'SH', 'TH'):
+                continue
+            if twos[0] == 'WH' and threes[0] == None:
+                finalList.append('W')
+                continue
+            # If G came first, vowel rule uses letter before G
+            if twos[0] == 'GH':
+                prior = threes[0][0]
+            else:
+                prior = twos[0][0]
+            if prior in vowels and twos[1][1] not in vowels:
+                continue
+
+        finalList.append(c)
 
     return ''.join(finalList)
 
