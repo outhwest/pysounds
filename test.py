@@ -18,7 +18,6 @@ l = "signed"
 m = "caught"
 n = "cot"
 
-
 assert isHomophone(a,c)
 assert not isHomophone(a,b)
 assert not isHomophone(b,c)
