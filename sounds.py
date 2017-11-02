@@ -191,9 +191,11 @@ def Metaphone(strInit, initialVowel=True):
             continue
 
         # 'D' before soft G becomes 'J', else 'T'
+        # Ignoring Wikipedia's rule "5. 'D' transforms to 'J'
+        # if followed by 'GE', 'GY', 'GI', to avoid unnecessary
+        # 'JJ' in output since the soft 'G' also gets sent to 'J'...
         if c == 'D':
-            if twos[1] == 'DG' and threes[2][2] in softeners:
-                finalList.append('J')
+            if twos[1] == 'DG' and threes[2] and threes[2][2] in softeners:
                 continue
             finalList.append('T')
             continue
@@ -222,7 +224,7 @@ def Metaphone(strInit, initialVowel=True):
 
         # semi-vowels only carry through if before a vowel
         if c in ('W', 'Y'):
-            if twos[1][1] in vowels:
+            if twos[1] and twos[1][1] in vowels:
                 finalList.append(c)
                 continue
             continue
@@ -251,6 +253,9 @@ def Metaphone(strInit, initialVowel=True):
         # Drop if after a vowel and not before a vowel
         # Also drop if after initial W or any P
         if c == 'H':
+            if not twos[0]:
+                finalList.append(c)
+                continue
             if twos[0] in ('PH', 'CH', 'SH', 'TH'):
                 continue
             if twos[0] == 'WH' and threes[0] == None:
@@ -261,7 +266,7 @@ def Metaphone(strInit, initialVowel=True):
                 prior = threes[0][0]
             else:
                 prior = twos[0][0]
-            if prior in vowels and twos[1][1] not in vowels:
+            if twos[1] and prior in vowels and twos[1][1] not in vowels:
                 continue
 
         finalList.append(c)
