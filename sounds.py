@@ -1,4 +1,5 @@
 from itertools import islice
+from re import sub
 
 ### @package sounds
 ##    @brief Module providing the usual phonetic algorithms
@@ -272,6 +273,59 @@ def Metaphone(strInit, initialVowel=True):
         finalList.append(c)
 
     return ''.join(finalList)
+
+### @brief Double Metaphone implementation
+##
+## 
+##  Working off of http://aspell.net/metaphone/dmetaph.cpp and 
+def doubleMetaphone(initStr):
+    pass
+
+### @brief naive syllable counting algorithm
+##
+##  Quick estimate of syllables in a string, useful for Flesch-Kincaid
+##
+def countSyllables(initStr, andWords=False, andLengths=False):
+    syllables = 0
+    words = initStr.upper().split(' ')
+    words = [word for word in words if len(word)>0]
+    initLen = len(words)
+    
+    if andLengths:
+        wLengths = []
+    for word in words:
+        cvWord = ''.join(c for c in word if c.isalpha())
+
+        alphaLen = len(cvWord)
+        if alphaLen == 0:
+            initLen -= 1
+            continue
+        if andLengths:
+            wLengths.append(alphaLen)
+        
+        cvWord = sub("[^AEIOUY]", 'C', cvWord)
+        cvWord = sub("[AEIOUY]", 'V', cvWord)
+        
+        # every space-delimited word counts as a syllable
+        syllables += 1
+        if len(word) > 2:
+            if word[-1] == 'E':
+                syllables -= 1
+            if word[-2:] == 'ED' and cvWord[-3] == 'C':
+                syllables -= 1
+        
+        threes = getNGrams(cvWord, 3)
+        for three in threes:
+            if three in ('VCV', 'CCV'):
+                syllables +=1
+    if andWords:
+        if andLengths:
+            return syllables, initLen, wLengths
+        return syllables, initLen
+    if andLengths:
+        return syllables, wLengths
+    return syllables
+
 
 ### @brief comparison function to put the phonetic algorithms to use
 ##
