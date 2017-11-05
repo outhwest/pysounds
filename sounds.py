@@ -311,13 +311,13 @@ def countSyllables(initStr, andWords=False, andLengths=False):
         if len(word) > 2:
             if word[-1] == 'E':
                 syllables -= 1
-            if word[-2:] == 'ED' and cvWord[-3] == 'C':
-                syllables -= 1
         
         threes = getNGrams(cvWord, 3)
+        first = True
         for three in threes:
-            if three in ('VCV', 'CCV'):
+            if three in ('VCV', 'CCV') and not first:
                 syllables +=1
+            first = False
     if andWords:
         if andLengths:
             return syllables, initLen, wLengths
