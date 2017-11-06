@@ -6,10 +6,10 @@ from re import sub
 ##
 ##    The goal here is to find homophones using some of the established
 ##    phonetic algorithms like Soundex, Metaphone, Double Metaphone, etc.
-##
-##    Future expansion could involve syllable counting and reading levels
-##    comparable to Flesch-Kincaid from MS Word
-##
+##    The other purpose is simple syllable-based readability measures.
+##    
+##    Progress: Naive implementations of Soundex and Metaphone are complete,
+##    along with simple Flesch tests for ease and grade level
     
 
 ###    @brief Straightforward implementation of a generalized Soundex algorithm
@@ -308,15 +308,17 @@ def countSyllables(initStr, andWords=False, andLengths=False):
         
         # every space-delimited word counts as a syllable
         syllables += 1
-        if len(word) > 2:
+        if len(word) > 3:
             if word[-1] == 'E':
                 syllables -= 1
         
         threes = getNGrams(cvWord, 3)
         first = True
         for three in threes:
+            if three == 'VVV':
+                syllables += 1
             if three in ('VCV', 'CCV') and not first:
-                syllables +=1
+                syllables += 1
             first = False
     if andWords:
         if andLengths:
@@ -326,6 +328,30 @@ def countSyllables(initStr, andWords=False, andLengths=False):
         return syllables, wLengths
     return syllables
 
+### @brief helper function for readability testing
+##
+def countSentences(initStr):
+    finStr = initStr.upper()
+    for abbreviation in ('MR. ', 'MS. ', 'MRS. ', 'DR. ', 'ST. '):
+        finStr = sub(abbreviation, '', finStr)
+    return len(finStr.split('. '))
+
+
+### @brief Flesch and Flesch-Kincaid helper function
+##
+##  @return tuple with (words/sentence, syllables/word)
+def fleschMetrics(initStr):
+    sylls, words = countSyllables(initStr, andWords=True)
+    sents = countSentences(initStr)
+    return (float(words)/sents), (float(sylls)/words)
+
+def fleschEase(initStr):
+    wordOverSents, syllOverWords = fleschMetrics(initStr)
+    return round(206.835 - 1.015*wordOverSents - 84.6*syllOverWords, 1)
+
+def fleschKincaid(initStr):
+    wordOverSents, syllOverWords = fleschMetrics(initStr)
+    return round(0.39*wordOverSents + 11.8*syllOverWords - 15.59, 1)
 
 ### @brief comparison function to put the phonetic algorithms to use
 ##
